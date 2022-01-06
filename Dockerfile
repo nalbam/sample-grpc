@@ -1,8 +1,8 @@
 FROM python:3.7
 
-RUN pip install protobuf grpcio
+RUN pip install protobuf grpcio grpcio-tools
 
-COPY ./python/route_guide .
+COPY ./examples/python/route_guide .
 
 CMD python route_guide_server.py
 
