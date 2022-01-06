@@ -6,6 +6,7 @@ pyenv global 3.8.10
 
 python -m pip install grpcio
 python -m pip install grpcio-tools
+python -m pip install homi
 
-python greeter_server.py
+python app.py
 ```

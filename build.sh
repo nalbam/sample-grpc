@@ -30,7 +30,7 @@ if [ "${GITLAB_USER_ID}" != "" ]; then
 fi
 
 # default port
-PORT=3000
+PORT=50051
 
 command -v tput > /dev/null && TPUT=true
 
