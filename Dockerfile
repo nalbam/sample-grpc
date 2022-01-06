@@ -19,4 +19,9 @@ WORKDIR ${SRC_DIR}
 
 ENV PYTHONPATH "${PYTONPATH}:${SRC_DIR}"
 
+# For gRPC health check on k8s
+RUN GRPC_HEALTH_PROBE_VERSION=v0.4.6 && \
+    wget -qO/bin/grpc_health_probe https://github.com/grpc-ecosystem/grpc-health-probe/releases/download/${GRPC_HEALTH_PROBE_VERSION}/grpc_health_probe-linux-amd64 && \
+    chmod +x /bin/grpc_health_probe
+
 CMD ["sh", "-c", "homi run app.py -w 100 -p $PORT"]
