@@ -18,6 +18,10 @@ $RECYCLE.BIN/
 target/
 build/
 
+# pytest
+__pycache__
+.pytest_cache
+
 # Nodejs
 node_modules/
 package-lock.json
