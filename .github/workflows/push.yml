@@ -21,9 +21,9 @@ jobs:
       #   with:
       #     node-version: "12.x"
 
-      # - name: Run Build
-      #   run: |
-      #     ./build.sh
+      - name: Run Build
+        run: |
+          ./build.sh
 
       - name: Bump Version
         uses: opspresso/action-builder@master

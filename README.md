@@ -1,5 +1,19 @@
 # sample-grpc
 
+[![GitHub release](https://img.shields.io/github/release/nalbam/sample-grpc.svg)](https://github.com/nalbam/sample-grpc/releases)
+[![Build-Push](https://github.com/nalbam/sample-grpc/actions/workflows/push.yaml/badge.svg)](https://github.com/nalbam/sample-grpc/actions/workflows/push.yaml)
+[![CircleCI](https://circleci.com/gh/nalbam/sample-grpc.svg?style=svg)](https://circleci.com/gh/nalbam/sample-grpc)
+
+[![DockerHub Badge](http://dockeri.co/image/nalbam/sample-grpc)](https://hub.docker.com/r/nalbam/sample-grpc/)
+
+## Docker
+
+```bash
+docker pull nalbam/sample-grpc
+```
+
+## pip install
+
 ```bash
 pyenv versions
 pyenv global 3.8.10
