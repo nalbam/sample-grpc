@@ -19,4 +19,4 @@ WORKDIR ${SRC_DIR}
 
 ENV PYTHONPATH "${PYTONPATH}:${SRC_DIR}"
 
-CMD ["sh", "-c","homi run app.py -w 100 -p $PORT"]
+CMD ["sh", "-c", "homi run app.py -w 100 -p $PORT"]
