@@ -22,17 +22,13 @@ jobs:
         with:
           args: --version
 
-      - name: Show Version
-        run: |
-          echo version ${{ steps.bump.outputs.version }}
-
       - name: Release to GitHub
         uses: opspresso/action-builder@master
         with:
           args: --release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          BUMP_VERSION: ${{ steps.bump.outputs.version }}
+          TAG_NAME: ${{ steps.bump.outputs.version }}
 
       - name: Trigger for GitOps
         uses: opspresso/action-builder@master
@@ -42,6 +38,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GHP_TOKEN }}
           GITOPS_REPO: "opspresso/argocd-env-demo"
           PROJECT: ${{ github.event.repository.name }}
+          VERSION: ${{ steps.bump.outputs.version }}
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v1
@@ -74,7 +71,7 @@ jobs:
         run: |
           DOCKER_IMAGE=nalbam/${{ github.event.repository.name }}
           ECR_REGISTRY=${{ steps.login-ecr.outputs.registry }}
-          VERSION=$(git describe --abbrev=0 --tags)
+          VERSION=${{ steps.bump.outputs.version }}
           TAGS="${DOCKER_IMAGE}:${VERSION},${DOCKER_IMAGE}:latest"
           TAGS="${TAGS},${ECR_REGISTRY}/${DOCKER_IMAGE}:${VERSION}"
           echo ::set-output name=tags::${TAGS}
