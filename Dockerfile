@@ -1,6 +1,6 @@
 # Dockerfile
 
-FROM python:3.8
+FROM python:3.8-slim-buster
 
 ENV PYTHONUNBUFFERED 1
 ENV PKG_DIR /tmp/pkg
