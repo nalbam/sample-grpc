@@ -2,6 +2,12 @@
 
 FROM python:3.9-slim
 
+LABEL maintainer="me@nalbam.com" \
+      org.opencontainers.image.description="A Sample Docker image for GRPC App" \
+      org.opencontainers.image.authors="Jungyoul Yu, me@nalbam.com, https://www.nalbam.com/" \
+      org.opencontainers.image.source="https://github.com/nalbam/sample-grpc" \
+      org.opencontainers.image.title="sample-grpc"
+
 RUN apt update && \
     apt install -y curl && \
     apt clean
