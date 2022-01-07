@@ -22,6 +22,10 @@ jobs:
         with:
           args: --version
 
+      - name: Show Version
+        run: |
+          echo version ${{ steps.bump.outputs.version }}
+
       - name: Release to GitHub
         uses: opspresso/action-builder@master
         with:
