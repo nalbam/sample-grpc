@@ -17,6 +17,7 @@ jobs:
           fetch-depth: 0
 
       - name: Bump Version
+        id: bump
         uses: opspresso/action-builder@master
         with:
           args: --version
@@ -27,6 +28,7 @@ jobs:
           args: --release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BUMP_VERSION: ${{ steps.bump.outputs.version }}
 
       - name: Trigger for GitOps
         uses: opspresso/action-builder@master
