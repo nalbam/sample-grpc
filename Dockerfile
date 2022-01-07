@@ -2,6 +2,10 @@
 
 FROM python:3.9-slim-bullseye
 
+RUN apt-get update && \
+    apt-get install -y curl && \
+    apt-get clean
+
 ENV PYTHONUNBUFFERED 1
 ENV PKG_DIR /tmp/pkg
 ENV SRC_DIR /opt
