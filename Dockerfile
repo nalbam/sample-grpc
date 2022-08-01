@@ -1,6 +1,6 @@
 # Dockerfile
 
-FROM python:3.9-slim
+FROM python:3.9-slim-buster
 
 LABEL maintainer="me@nalbam.com" \
       org.opencontainers.image.description="A Sample Docker image for GRPC App" \
@@ -9,7 +9,7 @@ LABEL maintainer="me@nalbam.com" \
       org.opencontainers.image.title="sample-grpc"
 
 RUN apt update && \
-    apt install -y curl && \
+    apt install -y bash curl && \
     apt clean
 
 ENV PYTHONUNBUFFERED 1
