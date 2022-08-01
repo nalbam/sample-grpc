@@ -1,2 +1,2 @@
 homi~=0.2
-protobuf~=3.19
+protobuf<3.20
