@@ -1,6 +1,6 @@
 # Dockerfile
 
-FROM python:3.9-slim-buster
+FROM python:3.9-slim
 
 LABEL maintainer="me@nalbam.com" \
       org.opencontainers.image.description="A Sample Docker image for GRPC App" \
