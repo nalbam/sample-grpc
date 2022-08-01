@@ -20,12 +20,7 @@ docker pull nalbam/sample-grpc
 ## pip install
 
 ```bash
-pyenv versions
-pyenv global 3.8.10
+pip3 install --upgrade -r requirements.txt
 
-python -m pip install grpcio
-python -m pip install grpcio-tools
-python -m pip install homi
-
-python app.py
+python3 src/app.py
 ```
