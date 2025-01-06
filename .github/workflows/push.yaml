@@ -62,20 +62,22 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # - name: Configure AWS Credentials 🔑
-      #   uses: aws-actions/configure-aws-credentials@v4
-      #   with:
-      #     role-to-assume: "arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/${{ env.AWS_ROLE_NAME }}"
-      #     role-session-name: github-actions-ci-bot
-      #     aws-region: ${{ env.AWS_REGION }}
+      - name: Configure AWS Credentials 🔑
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: "arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/${{ env.AWS_ROLE_NAME }}"
+          role-session-name: github-actions-ci-bot
+          aws-region: ${{ env.AWS_REGION }}
 
       - name: Docker Metadata 📦
         id: meta
         uses: docker/metadata-action@v5
+        env:
+          GHCR_IMAGE: ${{ github.repository_owner }}/${{ github.event.repository.name }}
+          AWS_IMAGE: ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.IMAGE_NAME }}
         with:
           images: |
             ${{ env.IMAGE_NAME }}
-            ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}
           tags: |
             type=semver,pattern={{raw}},value=${{ steps.bump.outputs.version }}
 
