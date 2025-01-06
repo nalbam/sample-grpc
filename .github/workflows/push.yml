@@ -42,7 +42,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG_NAME: ${{ steps.bump.outputs.version }}
-          TARGET_COMMITISH: main
+          ASSET_PATH: .
 
       - name: Setup Node 📦
         uses: actions/setup-node@v4
