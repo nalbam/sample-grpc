@@ -41,7 +41,6 @@ jobs:
           args: --release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TARGET_COMMITISH: main
           TAG_NAME: ${{ steps.bump.outputs.version }}
 
       - name: Setup Node 📦
