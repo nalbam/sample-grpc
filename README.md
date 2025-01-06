@@ -1,6 +1,6 @@
 # sample-grpc
 
-[![build](https://img.shields.io/github/workflow/status/nalbam/sample-grpc/build?label=build&style=for-the-badge&logo=github)](https://github.com/nalbam/sample-grpc/actions/workflows/push.yaml)
+[![build](https://img.shields.io/github/actions/workflow/status/nalbam/sample-grpc/push.yml?branch=main&style=for-the-badge&logo=github)](https://github.com/nalbam/sample-grpc/actions/workflows/push.yml)
 [![release](https://img.shields.io/github/v/release/nalbam/sample-grpc?style=for-the-badge&logo=github)](https://github.com/nalbam/sample-grpc/releases)
 
 <!-- [![CircleCI](https://circleci.com/gh/nalbam/sample-grpc.svg?style=svg)](https://circleci.com/gh/nalbam/sample-grpc) -->
