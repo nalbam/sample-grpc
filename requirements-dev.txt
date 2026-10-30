@@ -1,3 +1,3 @@
 -r requirements.txt
-# protoc 5.29 generates the *_pb2.py code for protobuf 5.29.x
-grpcio-tools~=1.71.0
+# grpcio-tools 1.85 bundles protoc 7.35 and generates *_pb2.py code for protobuf 7.x
+grpcio-tools>=1.85,<2

@@ -27,16 +27,14 @@ docker build -t sample-grpc .
 
 ## pip install
 
-The app runs on [homi](https://github.com/spaceone-dev/homi), which needs `protobuf` 5.x, so `requirements.txt` pins `protobuf<6`.
-
 ```bash
 pip3 install --upgrade -r requirements.txt
 
 cd src
-homi run app.py -p 50051
+PORT=50051 python3 app.py
 ```
 
-`python3 app.py` also starts the server on the default port.
+`app.py` is a plain grpcio server. It serves `helloworld.Greeter`, the gRPC health service and server reflection on `[::]:$PORT` (default `50051`) and stops gracefully on `SIGTERM`.
 
 ## Test
 
@@ -48,7 +46,7 @@ python3 greeter_client.py localhost:50051
 python3 smoke_test.py localhost:50051
 ```
 
-`greeter_server.py` is a plain grpcio server that serves the same `helloworld.Greeter` service on port 50051 without homi.
+`smoke_test.py` calls the Greeter, the health service (service name `""`) and reflection (`helloworld.Greeter` must be listed). `greeter_server.py` starts the same server as `app.py`.
 
 ## Regenerate protobuf code
 
@@ -58,5 +56,7 @@ pip3 install -r requirements-dev.txt
 cd src
 python3 -m grpc_tools.protoc -I. --python_out=. --grpc_python_out=. helloworld.proto health.proto
 ```
+
+The generated `*_pb2.py` header shows the `protoc` version bundled with `grpcio-tools`, which can be older than the installed `protobuf` runtime.
 
 CI (`.github/workflows/push.yml`) builds the image on pull requests and on `main`, starts the container and runs the smoke test. Only pushes to `main` release and push the image.
