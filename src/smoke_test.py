@@ -1,6 +1,6 @@
 """Smoke test: call the Greeter, the health and the reflection service of a running server.
 
-Usage: python smoke_test.py [host:port]   (default: $TARGET or localhost:50051)
+Usage: python smoke_test.py [host:port]   (default: $TARGET, else localhost:$PORT, else localhost:50051)
 """
 
 import os
@@ -18,8 +18,10 @@ def main(target):
     with grpc.insecure_channel(target) as channel:
         grpc.channel_ready_future(channel).result(timeout=30)
 
-        health = health_pb2_grpc.HealthStub(channel).Check(health_pb2.HealthCheckRequest())
-        assert health.status == health_pb2.HealthCheckResponse.SERVING, health
+        health = health_pb2_grpc.HealthStub(channel)
+        for service in ('', 'helloworld.Greeter'):
+            status = health.Check(health_pb2.HealthCheckRequest(service=service)).status
+            assert status == health_pb2.HealthCheckResponse.SERVING, (service, status)
 
         reflection = reflection_pb2_grpc.ServerReflectionStub(channel)
         responses = reflection.ServerReflectionInfo(iter([reflection_pb2.ServerReflectionRequest(list_services='')]))
@@ -30,8 +32,9 @@ def main(target):
         for method, expected in ((stub.SayHello, 'Hello smoke!'), (stub.SayHelloAgain, 'Hello Again smoke!')):
             message = method(helloworld_pb2.HelloRequest(name='smoke')).message
             assert message == expected, message
-    print('smoke test passed')
+    print(f'smoke test passed on {target}')
 
 
 if __name__ == '__main__':
-    main(sys.argv[1] if len(sys.argv) > 1 else os.environ.get('TARGET', 'localhost:50051'))
+    default_target = os.environ.get('TARGET') or f"localhost:{os.environ.get('PORT', '50051')}"
+    main(sys.argv[1] if len(sys.argv) > 1 else default_target)
