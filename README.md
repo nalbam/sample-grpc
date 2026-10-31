@@ -57,9 +57,12 @@ PORT=50051 python app.py
 
 ## Test
 
-Start the server, then run the greeter client and the smoke test from another shell:
+Start the server, then run the greeter client and the smoke test from another shell.
+A new shell does not keep the virtual environment active, so activate it again from
+the repository root:
 
 ```bash
+. .venv/bin/activate
 cd src
 python greeter_client.py localhost:50051
 python smoke_test.py localhost:50051
@@ -120,14 +123,22 @@ such as `v0.11.0` or `v0.11.0-rc.1`. Tags must fit Docker's 128-character limit
 and omit `+build` metadata, so the Git, image and deployment versions stay identical.
 Leading zeros such as `v01.0.0` are rejected.
 
-Release only a commit that the build workflow passed on `main`:
+Release only a commit that the build workflow passed on `main`. `gh run view --exit-status`
+also exits 0 while a run is queued or in progress, so check `status` and `conclusion`:
 
 ```bash
-sha=<commit on main>
+export sha=<full commit SHA on main>
 gh run list --workflow push.yml --branch main --commit "$sha" \
-  --json databaseId,conclusion,headSha
-gh run view <databaseId> --exit-status   # exits 0 only when the run succeeded
+  --json databaseId,status,conclusion,headSha
+gh run view <databaseId> --json headSha,status,conclusion --jq \
+  'if .headSha == env.sha and .status == "completed" and .conclusion == "success"
+   then "ok" else error("run is not a completed success for \(env.sha)") end'
+```
 
+Continue only when the command prints `ok`. It fails when the run is for another
+commit, is not `completed`, or has a `conclusion` other than `success`. Then tag the commit:
+
+```bash
 git tag v0.11.0 "$sha"
 git push origin v0.11.0
 ```
@@ -168,9 +179,13 @@ After a release, check each result against the same tag and commit:
 
 ```bash
 tag=v0.11.0
-git rev-list -n 1 "$tag"                     # must print the chosen commit
-gh run list --workflow release.yml --branch "$tag" --json databaseId,conclusion,headSha
-gh run view <databaseId> --exit-status       # all jobs succeeded
+export sha=$(git rev-list -n 1 "$tag")       # must be the chosen commit
+gh run list --workflow release.yml --branch "$tag" \
+  --json databaseId,status,conclusion,headSha
+gh run view <databaseId> --json headSha,status,conclusion --jq \
+  'if .headSha == env.sha and .status == "completed" and .conclusion == "success"
+   then "ok" else error("run is not a completed success for \(env.sha)") end'
+gh run view <databaseId> --json jobs --jq '.jobs[] | [.name, .status, .conclusion] | @tsv'
 gh release view "$tag" --json tagName,isPrerelease,url
 docker buildx imagetools inspect "nalbam/sample-grpc:$tag"   # lists linux/amd64 and linux/arm64
 
@@ -179,6 +194,10 @@ docker exec sample-grpc-check python smoke_test.py localhost:50051
 docker exec sample-grpc-check grpc_health_probe -addr=localhost:50051
 docker rm -f sample-grpc-check
 ```
+
+Treat the release as complete only when the run check prints `ok` and the other
+checks match the tag. A run that waits for `prod` approval is not `completed` and
+fails the check. The job list shows each stage; for a prerelease the prod job is `skipped`.
 
 `docker run` pulls the image for the host platform. To check the other platform, add
 `--platform linux/arm64` or `--platform linux/amd64` (QEMU is needed for a non-native platform).
