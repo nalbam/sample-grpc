@@ -46,9 +46,10 @@ def create_server(port):
 def serve():
     logging.basicConfig(level=logging.INFO)
     port = os.environ.get('PORT', '50051')
+    version = os.environ.get('VERSION', 'v0.0.0')
     server = create_server(port)
     server.start()
-    logging.info(f"gRPC server started on port {port}")
+    logging.info(f"gRPC server {version} started on port {port}")
 
     def stop(signum, frame):
         logging.info("SIGTERM received, stopping")

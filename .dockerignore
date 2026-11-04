@@ -1,2 +1,9 @@
-charts/
-.git/
+.git
+.github
+dist
+docs
+scripts
+Jenkinsfile
+*.md
+**/__pycache__
+.venv
