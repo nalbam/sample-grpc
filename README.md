@@ -19,7 +19,7 @@ The image uses `python:3.15-slim`, runs as the non-root uid `10001`, and contain
 | Environment variable | Default | Description |
 | --- | --- | --- |
 | `PORT` | `50051` | Listen port. |
-| `VERSION` | image tag | Version that the start log line reports (`gRPC server <VERSION> started on port <PORT>`). |
+| `VERSION` | `v0.0.0-dev` | Version that the start log line reports (`gRPC server <VERSION> started on port <PORT>`). Release images set it to their tag; a local build sets it with `--build-arg VERSION=...`. |
 
 To build the image, test it in its build stage, and smoke-test it (needs Docker with Buildx and `jq`):
 
