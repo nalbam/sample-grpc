@@ -1,38 +1,62 @@
-# Dockerfile
+# syntax=docker/dockerfile:1
+
+# build: on the build platform, checks that the generated code matches the
+# .proto files and runs the smoke test against a started server.
+FROM --platform=$BUILDPLATFORM python:3.15-slim AS build
+ENV PYTHONDONTWRITEBYTECODE=1 PIP_DISABLE_PIP_VERSION_CHECK=1
+WORKDIR /src
+COPY requirements.txt requirements-dev.txt ./
+RUN pip install --no-cache-dir -r requirements-dev.txt && pip check
+COPY src src
+RUN mkdir /tmp/gen \
+ && python -m grpc_tools.protoc -I src --python_out=/tmp/gen --grpc_python_out=/tmp/gen \
+      src/helloworld.proto src/health.proto \
+ && for f in /tmp/gen/*.py; do diff -u "src/${f##*/}" "$f" || exit 1; done
+RUN cd src && (PORT=50099 python app.py & echo $! > /tmp/server.pid) \
+ && python smoke_test.py localhost:50099; status=$?; kill "$(cat /tmp/server.pid)"; exit $status
+RUN mkdir /out && cp requirements.txt /out/ && cp src/*.py src/*.proto /out/
+
+# artifact: the release artifact, exported by scripts/release.sh artifact.
+FROM scratch AS artifact
+COPY --from=build /out /
+
+# grpc_health_probe v0.4.61 for Kubernetes probes. The checksums are from the
+# release checksums.txt; the build fails when a download does not match.
+FROM scratch AS probe-amd64
+ADD --chmod=755 --checksum=sha256:3746f63e89561616ce69eafdc9b46f8b23b47db3a564f6f2e8c31359a60e2f38 \
+    https://github.com/grpc-ecosystem/grpc-health-probe/releases/download/v0.4.61/grpc_health_probe-linux-amd64 /grpc_health_probe
+FROM scratch AS probe-arm64
+ADD --chmod=755 --checksum=sha256:c6ede27c8da07748f188930dfffba089e058cf711e26604591a152ff225d3a99 \
+    https://github.com/grpc-ecosystem/grpc-health-probe/releases/download/v0.4.61/grpc_health_probe-linux-arm64 /grpc_health_probe
+FROM probe-${TARGETARCH} AS probe
 
 FROM python:3.15-slim
 
-LABEL maintainer="me@nalbam.com" \
-      org.opencontainers.image.description="A Sample Docker image for GRPC App" \
-      org.opencontainers.image.authors="Jungyoul Yu, me@nalbam.com, https://www.nalbam.com/" \
-      org.opencontainers.image.source="https://github.com/nalbam/sample-grpc" \
-      org.opencontainers.image.title="sample-grpc"
+LABEL org.opencontainers.image.title="sample-grpc" \
+      org.opencontainers.image.description="A sample gRPC server in Python" \
+      org.opencontainers.image.source="https://github.com/nalbam/sample-grpc"
 
-RUN apt update && \
-    apt install -y bash curl && \
-    apt clean
+COPY --from=probe /grpc_health_probe /bin/grpc_health_probe
 
-ENV PYTHONUNBUFFERED=1
-ENV PKG_DIR=/tmp/pkg
-ENV SRC_DIR=/opt
-ENV PORT=50051
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
 
-COPY requirements.txt ${PKG_DIR}/requirements.txt
+WORKDIR /opt/app
 
-RUN pip install --upgrade pip && \
-    pip install --upgrade -r ${PKG_DIR}/requirements.txt
+# grpcio has native code, so the dependencies install for the target platform.
+COPY --from=artifact /requirements.txt ./
+RUN pip install --no-cache-dir -r requirements.txt && pip check
 
-RUN rm -rf /tmp/*
-ARG CACHEBUST=1
-COPY src ${SRC_DIR}
-WORKDIR ${SRC_DIR}
+COPY --from=artifact / ./
 
-ENV PYTHONPATH="${SRC_DIR}"
+RUN useradd --system --uid 10001 --no-create-home app
+USER 10001
 
-# For gRPC health check on k8s
-ARG TARGETARCH
-RUN GRPC_HEALTH_PROBE_VERSION=v0.4.61 && \
-    curl -fsSL -o /bin/grpc_health_probe https://github.com/grpc-ecosystem/grpc-health-probe/releases/download/${GRPC_HEALTH_PROBE_VERSION}/grpc_health_probe-linux-${TARGETARCH} && \
-    chmod +x /bin/grpc_health_probe
+ARG VERSION=v0.0.0-dev
+ENV PORT=50051 \
+    VERSION=${VERSION}
+
+EXPOSE 50051
 
 CMD ["python", "app.py"]
