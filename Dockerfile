@@ -20,16 +20,23 @@ RUN mkdir /out && cp requirements.txt /out/ && cp src/*.py src/*.proto /out/
 FROM scratch AS artifact
 COPY --from=build /out /
 
+# grpc_health_probe v0.4.61 for Kubernetes probes. The checksums are from the
+# release checksums.txt; the build fails when a download does not match.
+FROM scratch AS probe-amd64
+ADD --chmod=755 --checksum=sha256:3746f63e89561616ce69eafdc9b46f8b23b47db3a564f6f2e8c31359a60e2f38 \
+    https://github.com/grpc-ecosystem/grpc-health-probe/releases/download/v0.4.61/grpc_health_probe-linux-amd64 /grpc_health_probe
+FROM scratch AS probe-arm64
+ADD --chmod=755 --checksum=sha256:c6ede27c8da07748f188930dfffba089e058cf711e26604591a152ff225d3a99 \
+    https://github.com/grpc-ecosystem/grpc-health-probe/releases/download/v0.4.61/grpc_health_probe-linux-arm64 /grpc_health_probe
+FROM probe-${TARGETARCH} AS probe
+
 FROM python:3.15-slim
 
 LABEL org.opencontainers.image.title="sample-grpc" \
       org.opencontainers.image.description="A sample gRPC server in Python" \
       org.opencontainers.image.source="https://github.com/nalbam/sample-grpc"
 
-# grpc_health_probe for Kubernetes probes, for the target architecture.
-ARG TARGETARCH
-ARG GRPC_HEALTH_PROBE_VERSION=v0.4.61
-ADD --chmod=755 https://github.com/grpc-ecosystem/grpc-health-probe/releases/download/${GRPC_HEALTH_PROBE_VERSION}/grpc_health_probe-linux-${TARGETARCH} /bin/grpc_health_probe
+COPY --from=probe /grpc_health_probe /bin/grpc_health_probe
 
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
