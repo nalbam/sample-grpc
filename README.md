@@ -29,9 +29,10 @@ scripts/smoke.sh sample-grpc:dev
 ```
 
 The build stage checks that `src/*_pb2*.py` match the `.proto` files for the pinned
-`grpcio-tools`, then runs `src/smoke_test.py` against a started server.
+`grpcio-tools`, runs the unit tests in `tests/` (see [Test](#test)), then runs
+`src/smoke_test.py` against a started server. The tests are not copied into the image.
 `scripts/smoke.sh` runs `grpc_health_probe` and `smoke_test.py` in the container, and
-checks the version log line, the non-root user, a clean `docker stop` and a custom `PORT`.
+checks the version log line, the non-root user, a clean `docker stop` (exit code 0) and a custom `PORT`.
 
 ## pip install
 
@@ -47,11 +48,45 @@ cd src
 PORT=50051 python app.py
 ```
 
-`app.py` is a plain grpcio server. It serves `helloworld.Greeter`, the gRPC health service and server reflection on `[::]:$PORT` (default `50051`) and stops gracefully on `SIGTERM`.
+`app.py` is a plain grpcio server. It serves `helloworld.Greeter`, the gRPC health service and server reflection on `[::]:$PORT` (default `50051`).
+
+## Health and shutdown
+
+The standard health service (`grpc.health.v1.Health`) returns `SERVING` for the service
+names `""` (the whole server) and `helloworld.Greeter` while the server runs.
+`grpc_health_probe -addr=localhost:$PORT` checks it.
+
+On `SIGTERM` the server stops in this order:
+
+1. The health service returns `NOT_SERVING` for `""` and `helloworld.Greeter`
+   (`HealthServicer.enter_graceful_shutdown()`), so load balancers and probes stop sending new requests.
+2. For `DRAIN_SECONDS` (2 seconds) the server still accepts and answers requests, so health
+   checks get `NOT_SERVING` instead of a refused connection.
+3. `server.stop(GRACE_SECONDS)` rejects new requests with `UNAVAILABLE` and lets in-flight
+   requests finish for up to `GRACE_SECONDS` (5 seconds).
+4. The process exits with code 0.
+
+`DRAIN_SECONDS` and `GRACE_SECONDS` are constants in `src/app.py`. Shutdown takes at most
+7 seconds, which is less than the 10-second default of `docker stop`. In Kubernetes, keep
+`terminationGracePeriodSeconds` (default 30) longer than `DRAIN_SECONDS + GRACE_SECONDS`.
+A second `SIGTERM` during shutdown has no effect.
 
 ## Test
 
-Start the server, then run the greeter client and the smoke test from another shell.
+The unit tests in `tests/` check the shutdown order: after shutdown starts, the health
+service returns `NOT_SERVING` for `""` and `helloworld.Greeter`, a Greeter request that
+started before still gets its reply, and the server stops within `DRAIN_SECONDS + GRACE_SECONDS`.
+One test starts `src/app.py` in a subprocess, sends it `SIGTERM` and checks exit code 0.
+They need only the packages in `requirements.txt`. Run them from the repository root:
+
+```bash
+. .venv/bin/activate
+python -m unittest discover -s tests -v
+```
+
+The Docker build stage runs the same command, so the image build fails when a test fails.
+
+To check a running server, start the server, then run the greeter client and the smoke test from another shell.
 A new shell does not keep the virtual environment active, so activate it again from
 the repository root:
 
