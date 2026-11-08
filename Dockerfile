@@ -1,7 +1,8 @@
 # syntax=docker/dockerfile:1
 
 # build: on the build platform, checks that the generated code matches the
-# .proto files and runs the smoke test against a started server.
+# .proto files, runs the unit tests in tests/ and runs the smoke test against a
+# started server. The tests stay in this stage; /out holds only src/*.py and *.proto.
 FROM --platform=$BUILDPLATFORM python:3.15-slim AS build
 ENV PYTHONDONTWRITEBYTECODE=1 PIP_DISABLE_PIP_VERSION_CHECK=1
 WORKDIR /src
@@ -12,6 +13,8 @@ RUN mkdir /tmp/gen \
  && python -m grpc_tools.protoc -I src --python_out=/tmp/gen --grpc_python_out=/tmp/gen \
       src/helloworld.proto src/health.proto \
  && for f in /tmp/gen/*.py; do diff -u "src/${f##*/}" "$f" || exit 1; done
+COPY tests tests
+RUN python -m unittest discover -s tests -v
 RUN cd src && (PORT=50099 python app.py & echo $! > /tmp/server.pid) \
  && python smoke_test.py localhost:50099; status=$?; kill "$(cat /tmp/server.pid)"; exit $status
 RUN mkdir /out && cp requirements.txt /out/ && cp src/*.py src/*.proto /out/
